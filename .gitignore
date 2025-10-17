@@ -1,0 +1,10 @@
+# C/C++
+*.o
+*.obj
+*.out
+*.exe
+*.log
+*.dSYM/
+build/
+# Misc
+.DS_Store
