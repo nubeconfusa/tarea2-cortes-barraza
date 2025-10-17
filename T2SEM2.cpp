@@ -355,3 +355,122 @@ void marcar_carta_jugada(char palo, int cat, bool estado) {
         nodo->c.jugada = estado;
     }
 }
+
+/*****
+* void reiniciar_cartas_jugadas_recursivo
+******
+* Reinicia el estado de todas las cartas en un árbol (pone jugada = false)
+******
+* Input:
+*   NodoABB* raiz : Raíz del árbol
+******
+* Returns: void
+*****/
+void reiniciar_cartas_jugadas_recursivo(NodoABB* raiz) {
+    if (!raiz) return;
+    raiz->c.jugada = false;
+    reiniciar_cartas_jugadas_recursivo(raiz->izq);
+    reiniciar_cartas_jugadas_recursivo(raiz->der);
+}
+
+/*****
+* void reiniciar_todas_cartas_jugadas
+******
+* Reinicia el estado de todas las cartas en todos los palos
+******
+* Input: Ninguno
+******
+* Returns: void
+*****/
+void reiniciar_todas_cartas_jugadas() {
+    for (int i = 0; i < 4; ++i) {
+        reiniciar_cartas_jugadas_recursivo(palos[i]);
+    }
+}
+
+/*****
+* void recolectar_cartas_recursivo
+******
+* Recolecta todas las cartas de un árbol en un arreglo
+******
+* Input:
+*   NodoABB* raiz : Raíz del árbol
+*   Carta arr[] : Arreglo donde almacenar las cartas
+*   int& idx : Índice actual en el arreglo (se incrementa)
+******
+* Returns: void
+*****/
+void recolectar_cartas_recursivo(NodoABB* raiz, Carta arr[], int& idx) {
+    if (!raiz) return;
+    recolectar_cartas_recursivo(raiz->izq, arr, idx);
+    arr[idx++] = raiz->c;
+    recolectar_cartas_recursivo(raiz->der, arr, idx);
+}
+
+/*****
+* void barajar_mazo
+******
+* Crea una lista enlazada con las 52 cartas en orden aleatorio
+******
+* Input:
+*   NodoLista*& mazo : Referencia al puntero del mazo
+******
+* Returns: void
+*****/
+void barajar_mazo(NodoLista*& mazo) {
+    // Recolectar todas las cartas de los 4 árboles
+    Carta todas[52];
+    int idx = 0;
+    
+    for (int i = 0; i < 4; ++i) {
+        recolectar_cartas_recursivo(palos[i], todas, idx);
+    }
+    
+    // Algoritmo para barajar
+    for (int i = 51; i > 0; --i) {
+        int j = rand() % (i + 1);
+        // Intercambiar todas[i] y todas[j]
+        Carta temp = todas[i];
+        todas[i] = todas[j];
+        todas[j] = temp;
+    }
+    
+    // Insertar en la lista
+    for (int i = 0; i < 52; ++i) {
+        insertar_final_lista(mazo, todas[i]);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int main(){
+    srand(time(0));
+
+    cout << "Bienvenido!" << endl;
+    
+    // Construir los árboles de los palos
+    construir_todos_los_palos();
+    
+    // Jugar las 3 ciegas
+    const char* nombres_ciegas[] = {"ciega pequeña", "ciega grande", "ciega jefe"};
+    
+
+
+
+}
