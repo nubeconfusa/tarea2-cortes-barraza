@@ -183,3 +183,175 @@ void liberar_abb(NodoABB* raiz) {
     liberar_abb(raiz->der);
     delete raiz;
 }
+
+/*****
+* void insertar_final_lista
+******
+* Inserta una carta al final de una lista enlazada
+******
+* Input:
+*   NodoLista*& cabeza : Referencia al puntero de la cabeza de la lista
+*   Carta c : Carta a insertar
+******
+* Returns: void
+*****/
+void insertar_final_lista(NodoLista*& cabeza, Carta c) {
+    NodoLista* nuevo = new NodoLista;
+    nuevo->c = c;
+    nuevo->sig = nullptr;
+    
+    if (!cabeza) {
+        cabeza = nuevo;
+        return;
+    }
+    
+    NodoLista* actual = cabeza;
+    while (actual->sig) {
+        actual = actual->sig;
+    }
+    actual->sig = nuevo;
+}
+
+/*****
+* int contar_nodos_lista
+******
+* Cuenta la cantidad de nodos en una lista enlazada
+******
+* Input:
+*   NodoLista* cabeza : Cabeza de la lista
+******
+* Returns:
+*   int : Cantidad de nodos en la lista
+*****/
+int contar_nodos_lista(NodoLista* cabeza) {
+    int cuenta = 0;
+    NodoLista* actual = cabeza;
+    while (actual) {
+        cuenta++;
+        actual = actual->sig;
+    }
+    return cuenta;
+}
+
+/*****
+* Carta* obtener_carta_en_indice
+******
+* Obtiene un puntero a la carta en el índice especificado de la lista
+******
+* Input:
+*   NodoLista* cabeza : Cabeza de la lista
+*   int indice : Índice de la carta (0-based)
+******
+* Returns:
+*   Carta* : Puntero a la carta en el índice, o nullptr si no existe
+*****/
+Carta* obtener_carta_en_indice(NodoLista* cabeza, int indice) {
+    NodoLista* actual = cabeza;
+    int i = 0;
+    while (actual) {
+        if (i == indice) return &(actual->c);
+        actual = actual->sig;
+        i++;
+    }
+    return nullptr;
+}
+
+/*****
+* void eliminar_nodo_en_indice
+******
+* Elimina el nodo en el índice especificado de la lista
+******
+* Input:
+*   NodoLista*& cabeza : Referencia al puntero de la cabeza de la lista
+*   int indice : Índice del nodo a eliminar (0-based)
+******
+* Returns: void
+*****/
+void eliminar_nodo_en_indice(NodoLista*& cabeza, int indice) {
+    if (!cabeza) return;
+    
+    if (indice == 0) {
+        NodoLista* temp = cabeza;
+        cabeza = cabeza->sig;
+        delete temp;
+        return;
+    }
+    
+    NodoLista* actual = cabeza;
+    int i = 0;
+    while (actual->sig && i < indice - 1) {
+        actual = actual->sig;
+        i++;
+    }
+    
+    if (actual->sig) {
+        NodoLista* temp = actual->sig;
+        actual->sig = temp->sig;
+        delete temp;
+    }
+}
+
+
+/*****
+* Carta remover_primera_carta
+******
+* Remueve y retorna la primera carta de la lista
+******
+* Input:
+*   NodoLista*& cabeza : Referencia al puntero de la cabeza de la lista
+******
+* Returns:
+*   Carta : La carta removida
+*****/
+Carta remover_primera_carta(NodoLista*& cabeza) {
+    Carta c = cabeza->c;
+    NodoLista* temp = cabeza;
+    cabeza = cabeza->sig;
+    delete temp;
+    return c;
+}
+
+/*****
+* void liberar_lista
+******
+* Libera toda la memoria de una lista enlazada
+******
+* Input:
+*   NodoLista*& cabeza : Referencia al puntero de la cabeza de la lista
+******
+* Returns: void
+*****/
+void liberar_lista(NodoLista*& cabeza) {
+    while (cabeza) {
+        NodoLista* temp = cabeza;
+        cabeza = cabeza->sig;
+        delete temp;
+    }
+}
+
+/*****
+* void marcar_carta_jugada
+******
+* Marca una carta como jugada en el ABB correspondiente
+******
+* Input:
+*   char palo : Palo de la carta ('C', 'E', 'D', 'T')
+*   int cat : Categoría de la carta
+*   bool estado : true para marcar como jugada, false para desmarcar
+******
+* Returns: void
+*****/
+void marcar_carta_jugada(char palo, int cat, bool estado) {
+    int idx_palo = -1;
+    if (palo == 'C') idx_palo = 0;
+    else if (palo == 'E') idx_palo = 1;
+    else if (palo == 'D') idx_palo = 2;
+    else if (palo == 'T') idx_palo = 3;
+    
+    if (idx_palo == -1) return;
+    
+    NodoABB* nodo = buscar_en_abb(palos[idx_palo], cat);
+    if (nodo) {
+        nodo->c.jugada = estado;
+    }
+}
