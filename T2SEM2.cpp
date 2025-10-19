@@ -440,7 +440,241 @@ void barajar_mazo(NodoLista*& mazo) {
         insertar_final_lista(mazo, todas[i]);
     }
 }
+/*****
+* void entregar_cartas
+******
+* Entrega cartas del mazo a la mano del jugador hasta alcanzar el tamaño máximo
+******
+* Input:
+*   NodoLista*& mazo : Referencia al puntero del mazo
+*   NodoLista*& mano : Referencia al puntero de la mano
+*   int tam_max : Tamaño máximo de la mano
+******
+* Returns: void
+*****/
+void entregar_cartas(NodoLista*& mazo, NodoLista*& mano, int tam_max) {
+    int tam_actual = contar_nodos_lista(mano);
+    int cartas_a_entregar = tam_max - tam_actual;
+    
+    for (int i = 0; i < cartas_a_entregar && mazo; ++i) {
+        Carta c = remover_primera_carta(mazo);
+        insertar_final_lista(mano, c);
+        // Marcar como jugada en el ABB
+        marcar_carta_jugada(c.palo, c.categoria, true);
+    }
+}
 
+/*****
+* void ordenar_mano_por_categoria
+******
+* Ordena la mano del jugador por categoría descendente (13 a 1, pero As es mayor)
+******
+* Input:
+*   NodoLista*& mano : Referencia al puntero de la mano
+******
+* Returns: void
+*****/
+void ordenar_mano_por_categoria(NodoLista*& mano) {
+    if (!mano || !mano->sig) return;
+    
+    // Convertir a arreglo
+    int n = contar_nodos_lista(mano);
+    Carta* arr = new Carta[n];
+    
+    NodoLista* actual = mano;
+    for (int i = 0; i < n; ++i) {
+        arr[i] = actual->c;
+        actual = actual->sig;
+    }
+    
+    // Ordenamiento por categoría descendente (As=1 se considera mayor)
+    for (int i = 0; i < n - 1; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            int cat_i = arr[i].categoria;
+            int cat_j = arr[j].categoria;
+            
+            // As (1) es la carta más alta
+            bool i_es_mayor = false;
+            if (cat_i == 1) i_es_mayor = true;
+            else if (cat_j == 1) i_es_mayor = false;
+            else i_es_mayor = (cat_i > cat_j);
+            
+            if (!i_es_mayor) {
+                Carta temp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = temp;
+            }
+        }
+    }
+    
+    // Reconstruir la lista
+    liberar_lista(mano);
+    for (int i = 0; i < n; ++i) {
+        insertar_final_lista(mano, arr[i]);
+    }
+    
+    delete[] arr;
+}
+
+/*****
+* void mostrar_mano
+******
+* Muestra las cartas de la mano del jugador en formato de juego
+******
+* Input:
+*   NodoLista* mano : Cabeza de la lista de la mano
+******
+* Returns: void
+*****/
+void mostrar_mano(NodoLista* mano) {
+    NodoLista* actual = mano;
+    bool primero = true;
+    while (actual) {
+        if (!primero) cout << " ";
+        cout << categoria_a_char(actual->c.categoria) << actual->c.palo;
+        actual = actual->sig;
+        primero = false;
+    }
+    cout << endl;
+}
+
+/*****
+* void mostrar_cartas_palo_recursivo
+******
+* Recorre un árbol en inorden y muestra las cartas según su estado (disponible/no disponible)
+******
+* Input:
+*   NodoABB* raiz : Raíz del árbol
+*   bool mostrar_jugadas : true para mostrar solo jugadas, false para no jugadas
+*   bool& primero : Referencia para controlar espaciado
+******
+* Returns: void
+*****/
+void mostrar_cartas_palo_recursivo(NodoABB* raiz, bool mostrar_jugadas, bool& primero) {
+    if (!raiz) return;
+    
+    mostrar_cartas_palo_recursivo(raiz->izq, mostrar_jugadas, primero);
+    
+    if (raiz->c.jugada == mostrar_jugadas) {
+        if (!primero) cout << " ";
+        cout << categoria_a_char(raiz->c.categoria) << raiz->c.palo;
+        primero = false;
+    }
+    
+    mostrar_cartas_palo_recursivo(raiz->der, mostrar_jugadas, primero);
+}
+
+/*****
+* void mostrar_todas_las_cartas
+******
+* Muestra todas las cartas del mazo separadas en disponibles y no disponibles
+******
+* Input: Ninguno
+******
+* Returns: void
+*****/
+void mostrar_todas_las_cartas() {
+    cout << "Disponibles" << endl;
+    
+    // Mostrar cartas disponibles
+    char palos_char[] = {'E', 'C', 'T', 'D'};
+    for (int i = 0; i < 4; ++i) {
+        int idx_palo = -1;
+        if (palos_char[i] == 'C') idx_palo = 0;
+        else if (palos_char[i] == 'E') idx_palo = 1;
+        else if (palos_char[i] == 'D') idx_palo = 2;
+        else if (palos_char[i] == 'T') idx_palo = 3;
+        
+        cout << "  ";
+        bool primero = true;
+        mostrar_cartas_palo_recursivo(palos[idx_palo], false, primero);
+        cout << endl;
+    }
+    
+    cout << endl << "No disponibles" << endl;
+    
+    // Mostrar cartas no disponibles
+    for (int i = 0; i < 4; ++i) {
+        int idx_palo = -1;
+        if (palos_char[i] == 'C') idx_palo = 0;
+        else if (palos_char[i] == 'E') idx_palo = 1;
+        else if (palos_char[i] == 'D') idx_palo = 2;
+        else if (palos_char[i] == 'T') idx_palo = 3;
+        
+        cout << "  ";
+        bool primero = true;
+        mostrar_cartas_palo_recursivo(palos[idx_palo], true, primero);
+        cout << endl;
+    }
+}
+
+/*****
+* void detectar_poker
+******
+* Detecta si hay 4 cartas de la misma categoría
+******
+* Input:
+*   Carta cartas[] : Arreglo de cartas a analizar
+*   int n : Cantidad de cartas
+*   ResultadoMano& resultado : Estructura donde almacenar el resultado
+******
+* Returns:
+*   bool : true si se detectó póker
+*****/
+bool detectar_poker(Carta cartas[], int n, ResultadoMano& resultado) {
+    if (n < 4) return false;
+    
+    // Contar frecuencias
+    int freq[14] = {0};  // índices
+    for (int i = 0; i < n; ++i) {
+        freq[cartas[i].categoria]++;
+    }
+    
+    // Buscar 4 iguales
+    for (int cat = 1; cat <= 13; ++cat) {
+        if (freq[cat] == 4) {
+            resultado.tipo = 6;
+            resultado.num_cartas_anotan = 0;
+            for (int i = 0; i < n; ++i) {
+                if (cartas[i].categoria == cat) {
+                    resultado.cartas_que_anotan[resultado.num_cartas_anotan++] = i;
+                }
+            }
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/*****
+* bool detectar_color
+******
+* Detecta si todas las cartas son del mismo palo
+******
+* Input:
+*   Carta cartas[] : Arreglo de cartas a analizar
+*   int n : Cantidad de cartas
+*   ResultadoMano& resultado : Estructura donde almacenar el resultado
+******
+* Returns:
+*   bool : true si se detectó color
+*****/
+bool detectar_color(Carta cartas[], int n, ResultadoMano& resultado) {
+    if (n != 5) return false;
+    
+    char palo = cartas[0].palo;
+    for (int i = 1; i < n; ++i) {
+        if (cartas[i].palo != palo) return false;
+    }
+    
+    resultado.tipo = 5;
+    resultado.num_cartas_anotan = n;
+    for (int i = 0; i < n; ++i) {
+        resultado.cartas_que_anotan[i] = i;
+    }
+    return true;
+}
 
 
 
