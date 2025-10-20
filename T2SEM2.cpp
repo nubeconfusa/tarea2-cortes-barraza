@@ -856,6 +856,133 @@ bool detectar_par(Carta cartas[], int n, ResultadoMano& resultado) {
     return false;
 }
 
+/*****
+* bool procesar_descarte
+******
+* Procesa el descarte de cartas seleccionadas por el jugador
+******
+* Input:
+*   Estado& estado : Estado del juego
+*   NodoLista*& mazo : Referencia al mazo
+*   NodoLista*& mano : Referencia a la mano
+*   int indices[] : Índices de las cartas a descartar
+*   int cantidad : Cantidad de cartas a descartar
+******
+* Returns:
+*   bool : true si el descarte fue exitoso
+*****/
+bool procesar_descarte(Estado& estado, NodoLista*& mazo, NodoLista*& mano, 
+                       int indices[], int cantidad) {
+    if (estado.descartes_restantes <= 0) {
+        cout << "No te quedan descartes!" << endl;
+        return false;
+    }
+    
+    if (cantidad > 5) {
+        cout << "No puedes descartar más de 5 cartas!" << endl;
+        return false;
+    }
+    
+    // Ordenar índices de mayor a menor para eliminar sin afectar los índices
+    for (int i = 0; i < cantidad - 1; ++i) {
+        for (int j = i + 1; j < cantidad; ++j) {
+            if (indices[i] < indices[j]) {
+                int temp = indices[i];
+                indices[i] = indices[j];
+                indices[j] = temp;
+            }
+        }
+    }
+    
+    // Eliminar cartas de la mano
+    for (int i = 0; i < cantidad; ++i) {
+        eliminar_nodo_en_indice(mano, indices[i]);
+    }
+    
+    estado.descartes_restantes--;
+    
+    // Entregar nuevas cartas
+    entregar_cartas(mazo, mano, estado.tam_mano_max);
+    
+    // Ordenar mano
+    ordenar_mano_por_categoria(mano);
+    
+    return true;
+}
+
+/*****
+* bool procesar_jugada
+******
+* Procesa la jugada de cartas seleccionadas por el jugador
+******
+* Input:
+*   Estado& estado : Estado del juego
+*   NodoLista*& mazo : Referencia al mazo
+*   NodoLista*& mano : Referencia a la mano
+*   int indices[] : Índices de las cartas a jugar
+*   int cantidad : Cantidad de cartas a jugar
+******
+* Returns:
+*   bool : true si la jugada fue exitosa
+*****/
+bool procesar_jugada(Estado& estado, NodoLista*& mazo, NodoLista*& mano, 
+                     int indices[], int cantidad) {
+    if (estado.manos_restantes <= 0) {
+        cout << "No te quedan manos!" << endl;
+        return false;
+    }
+    
+    if (cantidad > 5) {
+        cout << "No puedes jugar más de 5 cartas!" << endl;
+        return false;
+    }
+    
+    // Recolectar las cartas seleccionadas
+    Carta cartas_jugadas[5];
+    for (int i = 0; i < cantidad; ++i) {
+        Carta* c = obtener_carta_en_indice(mano, indices[i]);
+        if (c) {
+            cartas_jugadas[i] = *c;
+        }
+    }
+    
+    // Detectar tipo de mano
+    ResultadoMano resultado = detectar_tipo_mano(cartas_jugadas, cantidad);
+    
+    // Calcular puntaje
+    int puntaje = calcular_puntaje_mano(resultado, cartas_jugadas);
+    
+    // Mostrar resultado
+    cout << "Mano jugada: " << nombre_tipo_mano(resultado.tipo) << endl;
+    cout << "Fichas anotadas: " << puntaje << endl;
+    
+    estado.fichas_acumuladas += puntaje;
+    estado.manos_restantes--;
+    
+    // Ordenar índices de mayor a menor para eliminar
+    for (int i = 0; i < cantidad - 1; ++i) {
+        for (int j = i + 1; j < cantidad; ++j) {
+            if (indices[i] < indices[j]) {
+                int temp = indices[i];
+                indices[i] = indices[j];
+                indices[j] = temp;
+            }
+        }
+    }
+    
+    // Eliminar cartas jugadas de la mano
+    for (int i = 0; i < cantidad; ++i) {
+        eliminar_nodo_en_indice(mano, indices[i]);
+    }
+    
+    // Entregar nuevas cartas
+    entregar_cartas(mazo, mano, estado.tam_mano_max);
+    
+    // Ordenar mano
+    ordenar_mano_por_categoria(mano);
+    
+    return true;
+}
 
 
 
