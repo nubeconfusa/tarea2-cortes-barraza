@@ -676,6 +676,186 @@ bool detectar_color(Carta cartas[], int n, ResultadoMano& resultado) {
     return true;
 }
 
+/*****
+* bool detectar_escalera
+******
+* Detecta si hay una secuencia de 5 cartas consecutivas
+******
+* Input:
+*   Carta cartas[] : Arreglo de cartas a analizar
+*   int n : Cantidad de cartas
+*   ResultadoMano& resultado : Estructura donde almacenar el resultado
+******
+* Returns:
+*   bool : true si se detectó escalera
+*****/
+bool detectar_escalera(Carta cartas[], int n, ResultadoMano& resultado) {
+    if (n != 5) return false;
+    
+    // Ordenar por categoría
+    int cats[5];
+    for (int i = 0; i < 5; ++i) {
+        cats[i] = cartas[i].categoria;
+    }
+    
+    for (int i = 0; i < 4; ++i) {
+        for (int j = i + 1; j < 5; ++j) {
+            if (cats[i] > cats[j]) {
+                int temp = cats[i];
+                cats[i] = cats[j];
+                cats[j] = temp;
+            }
+        }
+    }
+    
+    // Verificar secuencia
+    bool es_escalera = true;
+    for (int i = 0; i < 4; ++i) {
+        if (cats[i + 1] != cats[i] + 1) {
+            es_escalera = false;
+            break;
+        }
+    }
+    
+    // Caso especial: A, 2, 3, 4, 5
+    if (!es_escalera) {
+        if (cats[0] == 1 && cats[1] == 2 && cats[2] == 3 && cats[3] == 4 && cats[4] == 5) {
+            es_escalera = true;
+        }
+    }
+    
+    if (es_escalera) {
+        resultado.tipo = 4;
+        resultado.num_cartas_anotan = 5;
+        for (int i = 0; i < 5; ++i) {
+            resultado.cartas_que_anotan[i] = i;
+        }
+        return true;
+    }
+    
+    return false;
+}
+
+/*****
+* bool detectar_tercia
+******
+* Detecta si hay 3 cartas de la misma categoría
+******
+* Input:
+*   Carta cartas[] : Arreglo de cartas a analizar
+*   int n : Cantidad de cartas
+*   ResultadoMano& resultado : Estructura donde almacenar el resultado
+******
+* Returns:
+*   bool : true si se detectó tercia
+*****/
+bool detectar_tercia(Carta cartas[], int n, ResultadoMano& resultado) {
+    if (n < 3) return false;
+    
+    int freq[14] = {0};
+    for (int i = 0; i < n; ++i) {
+        freq[cartas[i].categoria]++;
+    }
+    
+    for (int cat = 1; cat <= 13; ++cat) {
+        if (freq[cat] == 3) {
+            resultado.tipo = 3;
+            resultado.num_cartas_anotan = 0;
+            for (int i = 0; i < n; ++i) {
+                if (cartas[i].categoria == cat) {
+                    resultado.cartas_que_anotan[resultado.num_cartas_anotan++] = i;
+                }
+            }
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/*****
+* bool detectar_doble_par
+******
+* Detecta si hay dos pares de categorías diferentes
+******
+* Input:
+*   Carta cartas[] : Arreglo de cartas a analizar
+*   int n : Cantidad de cartas
+*   ResultadoMano& resultado : Estructura donde almacenar el resultado
+******
+* Returns:
+*   bool : true si se detectó doble par
+*****/
+bool detectar_doble_par(Carta cartas[], int n, ResultadoMano& resultado) {
+    if (n < 4) return false;
+    
+    int freq[14] = {0};
+    for (int i = 0; i < n; ++i) {
+        freq[cartas[i].categoria]++;
+    }
+    
+    int pares_encontrados = 0;
+    int categorias_pares[2];
+    
+    for (int cat = 1; cat <= 13; ++cat) {
+        if (freq[cat] == 2) {
+            categorias_pares[pares_encontrados++] = cat;
+            if (pares_encontrados == 2) break;
+        }
+    }
+    
+    if (pares_encontrados == 2) {
+        resultado.tipo = 2;
+        resultado.num_cartas_anotan = 0;
+        for (int i = 0; i < n; ++i) {
+            if (cartas[i].categoria == categorias_pares[0] || 
+                cartas[i].categoria == categorias_pares[1]) {
+                resultado.cartas_que_anotan[resultado.num_cartas_anotan++] = i;
+            }
+        }
+        return true;
+    }
+    
+    return false;
+}
+
+/*****
+* bool detectar_par
+******
+* Detecta si hay 2 cartas de la misma categoría
+******
+* Input:
+*   Carta cartas[] : Arreglo de cartas a analizar
+*   int n : Cantidad de cartas
+*   ResultadoMano& resultado : Estructura donde almacenar el resultado
+******
+* Returns:
+*   bool : true si se detectó par
+*****/
+bool detectar_par(Carta cartas[], int n, ResultadoMano& resultado) {
+    if (n < 2) return false;
+    
+    int freq[14] = {0};
+    for (int i = 0; i < n; ++i) {
+        freq[cartas[i].categoria]++;
+    }
+    
+    for (int cat = 1; cat <= 13; ++cat) {
+        if (freq[cat] == 2) {
+            resultado.tipo = 1;
+            resultado.num_cartas_anotan = 0;
+            for (int i = 0; i < n; ++i) {
+                if (cartas[i].categoria == cat) {
+                    resultado.cartas_que_anotan[resultado.num_cartas_anotan++] = i;
+                }
+            }
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 
 
 
