@@ -1000,9 +1000,39 @@ bool procesar_jugada(Estado& estado, NodoLista*& mazo, NodoLista*& mano,
 
 
 
-int main(){
-    srand(time(0));
+/*****
+* bool verificar_victoria
+******
+* Verifica si el jugador ha ganado la ciega actual
+******
+* Input:
+*   Estado& estado : Estado del juego
+******
+* Returns:
+*   bool : true si el jugador ganó
+*****/
+bool verificar_victoria(Estado& estado) {
+    return estado.fichas_acumuladas >= estado.pozo_obj;
+}
 
+/*****
+* bool verificar_derrota
+******
+* Verifica si el jugador ha perdido la ciega actual
+******
+* Input:
+*   Estado& estado : Estado del juego
+******
+* Returns:
+*   bool : true si el jugador perdió
+*****/
+bool verificar_derrota(Estado& estado) {
+    return estado.manos_restantes == 0 && estado.fichas_acumuladas < estado.pozo_obj;
+}
+
+int main() {
+    srand(time(0));
+    
     cout << "Bienvenido!" << endl;
     
     // Construir los árboles de los palos
@@ -1011,7 +1041,111 @@ int main(){
     // Jugar las 3 ciegas
     const char* nombres_ciegas[] = {"ciega pequeña", "ciega grande", "ciega jefe"};
     
-
-
-
+    for (int ciega = 0; ciega < 3; ++ciega) {
+        Estado estado;
+        inicializar_estado(estado, ciega);
+        
+        cout << "Comienza la " << nombres_ciegas[ciega] << ", pozo a vencer: " 
+             << estado.pozo_obj << " fichas" << endl;
+        
+        if (ciega == 2) {
+            cout << "*** MODIFICADOR: El Grillete (tamaño de mano reducido a 7) ***" << endl;
+        }
+        
+        NodoLista* mazo = nullptr;
+        NodoLista* mano = nullptr;
+        
+        iniciar_ronda(estado, mazo, mano);
+        
+        // Loop principal de la ciega
+        bool ciega_terminada = false;
+        while (!ciega_terminada) {
+            mostrar_estado_juego(estado, mazo, mano);
+            
+            // Verificar victoria
+            if (verificar_victoria(estado)) {
+                cout << nombres_ciegas[ciega] << " vencida: " 
+                     << estado.fichas_acumuladas << " / " << estado.pozo_obj << " fichas" << endl;
+                ciega_terminada = true;
+                continue;
+            }
+            
+            // Verificar derrota
+            if (verificar_derrota(estado)) {
+                cout << "Has perdido la " << nombres_ciegas[ciega] << "!" << endl;
+                cout << "Fichas obtenidas: " << estado.fichas_acumuladas 
+                     << " / " << estado.pozo_obj << " necesarias" << endl;
+                // Liberar memoria y terminar
+                liberar_lista(mazo);
+                liberar_lista(mano);
+                for (int i = 0; i < 4; ++i) {
+                    liberar_abb(palos[i]);
+                }
+                return 0;
+            }
+            
+            // Leer comando del jugador
+            cout << "Juega: ";
+            char accion;
+            cin >> accion;
+            
+            if (accion == 'M' || accion == 'm') {
+                mostrar_todas_las_cartas();
+                continue;
+            }
+            
+            int cantidad;
+            cin >> cantidad;
+            
+            if (cantidad <= 0 || cantidad > 5) {
+                cout << "Cantidad inválida! Debe ser entre 1 y 5." << endl;
+                cin.ignore(10000, '\n');
+                continue;
+            }
+            
+            int indices[5];
+            for (int i = 0; i < cantidad; ++i) {
+                cin >> indices[i];
+            }
+            cin.ignore(10000, '\n');
+            
+            // Validar índices
+            bool indices_validos = true;
+            int tam_mano = contar_nodos_lista(mano);
+            for (int i = 0; i < cantidad; ++i) {
+                if (indices[i] < 0 || indices[i] >= tam_mano) {
+                    indices_validos = false;
+                    break;
+                }
+            }
+            
+            if (!indices_validos) {
+                cout << "Índices inválidos!" << endl;
+                continue;
+            }
+            
+            // Procesar acción
+            if (accion == 'J' || accion == 'j') {
+                procesar_jugada(estado, mazo, mano, indices, cantidad);
+            } else if (accion == 'D' || accion == 'd') {
+                procesar_descarte(estado, mazo, mano, indices, cantidad);
+            } else {
+                cout << "Acción inválida! Usa J (jugar), D (descartar) o M (mostrar)." << endl;
+            }
+        }
+        
+        // Limpiar antes de la siguiente ciega
+        liberar_lista(mazo);
+        liberar_lista(mano);
+    }
+    
+    // Victoria total
+    cout << endl << "¡FELICIDADES! Has completado las 3 ciegas!" << endl;
+    
+    // Liberar memoria de los árboles
+    for (int i = 0; i < 4; ++i) {
+        liberar_abb(palos[i]);
+    }
+    
+    return 0;
 }
