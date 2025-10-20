@@ -291,7 +291,6 @@ void eliminar_nodo_en_indice(NodoLista*& cabeza, int indice) {
     }
 }
 
-
 /*****
 * Carta remover_primera_carta
 ******
@@ -440,6 +439,7 @@ void barajar_mazo(NodoLista*& mazo) {
         insertar_final_lista(mazo, todas[i]);
     }
 }
+
 /*****
 * void entregar_cartas
 ******
@@ -857,6 +857,216 @@ bool detectar_par(Carta cartas[], int n, ResultadoMano& resultado) {
 }
 
 /*****
+* bool detectar_carta_alta
+******
+* Detecta la carta de mayor categoría (siempre retorna true)
+******
+* Input:
+*   Carta cartas[] : Arreglo de cartas a analizar
+*   int n : Cantidad de cartas
+*   ResultadoMano& resultado : Estructura donde almacenar el resultado
+******
+* Returns:
+*   bool : true (siempre)
+*****/
+bool detectar_carta_alta(Carta cartas[], int n, ResultadoMano& resultado) {
+    int idx_mayor = 0;
+    int cat_mayor = cartas[0].categoria;
+    
+    for (int i = 1; i < n; ++i) {
+        int cat_actual = cartas[i].categoria;
+        // As (1) es la carta más alta
+        if (cat_actual == 1) {
+            idx_mayor = i;
+            cat_mayor = 1;
+        } else if (cat_mayor != 1 && cat_actual > cat_mayor) {
+            idx_mayor = i;
+            cat_mayor = cat_actual;
+        }
+    }
+    
+    resultado.tipo = 0;
+    resultado.num_cartas_anotan = 1;
+    resultado.cartas_que_anotan[0] = idx_mayor;
+    return true;
+}
+
+/*****
+* ResultadoMano detectar_tipo_mano
+******
+* Detecta el tipo de mano de mayor nivel entre las cartas jugadas
+******
+* Input:
+*   Carta cartas[] : Arreglo de cartas jugadas
+*   int n : Cantidad de cartas
+******
+* Returns:
+*   ResultadoMano : Estructura con el tipo de mano y las cartas que anotan
+*****/
+ResultadoMano detectar_tipo_mano(Carta cartas[], int n) {
+    ResultadoMano resultado;
+    
+    // Verificar en orden de mayor a menor nivel
+    if (detectar_poker(cartas, n, resultado)) return resultado;
+    if (detectar_color(cartas, n, resultado)) return resultado;
+    if (detectar_escalera(cartas, n, resultado)) return resultado;
+    if (detectar_tercia(cartas, n, resultado)) return resultado;
+    if (detectar_doble_par(cartas, n, resultado)) return resultado;
+    if (detectar_par(cartas, n, resultado)) return resultado;
+    detectar_carta_alta(cartas, n, resultado);
+    
+    return resultado;
+}
+
+/*****
+* int fichas_base_por_tipo
+******
+* Retorna las fichas base según el tipo de mano
+******
+* Input:
+*   int tipo : Tipo de mano (0-6)
+******
+* Returns:
+*   int : Fichas base del tipo de mano
+*****/
+int fichas_base_por_tipo(int tipo) {
+    int fichas_base[] = {50, 40, 80, 120, 150, 200, 400};
+    return fichas_base[tipo];
+}
+
+/*****
+* const char* nombre_tipo_mano
+******
+* Retorna el nombre del tipo de mano
+******
+* Input:
+*   int tipo : Tipo de mano (0-6)
+******
+* Returns:
+*   const char* : Nombre del tipo de mano
+*****/
+const char* nombre_tipo_mano(int tipo) {
+    const char* nombres[] = {
+        "Carta más alta",
+        "Par",
+        "Doble par",
+        "Tercia",
+        "Escalera",
+        "Color",
+        "Póker"
+    };
+    return nombres[tipo];
+}
+
+/*****
+* int calcular_puntaje_mano
+******
+* Calcula el puntaje total de una mano (fichas base + suma de categorías)
+******
+* Input:
+*   ResultadoMano resultado : Resultado de la detección de mano
+*   Carta cartas[] : Arreglo de cartas jugadas
+******
+* Returns:
+*   int : Puntaje total de la mano
+*****/
+int calcular_puntaje_mano(ResultadoMano resultado, Carta cartas[]) {
+    int fichas = fichas_base_por_tipo(resultado.tipo);
+    
+    // Sumar las categorías de las cartas que anotan
+    for (int i = 0; i < resultado.num_cartas_anotan; ++i) {
+        int idx = resultado.cartas_que_anotan[i];
+        fichas += cartas[idx].categoria;
+    }
+    
+    return fichas;
+}
+
+/*****
+* void inicializar_estado
+******
+* Inicializa el estado del juego para una ciega específica
+******
+* Input:
+*   Estado& estado : Referencia al estado del juego
+*   int ronda_idx : Índice de la ronda (0=pequeña, 1=grande, 2=jefe)
+******
+* Returns: void
+*****/
+void inicializar_estado(Estado& estado, int ronda_idx) {
+    estado.ronda_idx = ronda_idx;
+    estado.fichas_acumuladas = 0;
+    estado.manos_restantes = 4;
+    estado.descartes_restantes = 3;
+    estado.tam_mano_max = 8;
+    
+    // Configurar pozo según la ciega
+    if (ronda_idx == 0) {
+        estado.pozo_obj = 250;
+    } else if (ronda_idx == 1) {
+        estado.pozo_obj = 350;
+    } else {
+        estado.pozo_obj = 500;
+        // Modificador: El Grillete
+        estado.tam_mano_max = 7;
+    }
+}
+
+/*****
+* void mostrar_estado_juego
+******
+* Muestra el estado actual del juego
+******
+* Input:
+*   Estado& estado : Estado del juego
+*   NodoLista* mazo : Mazo de cartas
+*   NodoLista* mano : Mano del jugador
+******
+* Returns: void
+*****/
+void mostrar_estado_juego(Estado& estado, NodoLista* mazo, NodoLista* mano) {
+    cout << endl;
+    cout << estado.fichas_acumuladas << " / " << estado.pozo_obj << " fichas" << endl;
+    
+    int cartas_restantes = contar_nodos_lista(mazo);
+    cout << cartas_restantes << " / 52 cartas" << endl;
+    
+    cout << estado.manos_restantes << "J / " << estado.descartes_restantes << "D" << endl;
+    
+    mostrar_mano(mano);
+}
+
+/*****
+* void iniciar_ronda
+******
+* Inicia una ronda del juego (reinicia cartas, baraja, entrega mano inicial)
+******
+* Input:
+*   Estado& estado : Estado del juego
+*   NodoLista*& mazo : Referencia al mazo
+*   NodoLista*& mano : Referencia a la mano
+******
+* Returns: void
+*****/
+void iniciar_ronda(Estado& estado, NodoLista*& mazo, NodoLista*& mano) {
+    // Limpiar estructuras previas
+    liberar_lista(mazo);
+    liberar_lista(mano);
+    
+    // Reiniciar estado de cartas jugadas
+    reiniciar_todas_cartas_jugadas();
+    
+    // Barajar mazo
+    barajar_mazo(mazo);
+    
+    // Entregar cartas iniciales
+    entregar_cartas(mazo, mano, estado.tam_mano_max);
+    
+    // Ordenar mano
+    ordenar_mano_por_categoria(mano);
+}
+
+/*****
 * bool procesar_descarte
 ******
 * Procesa el descarte de cartas seleccionadas por el jugador
@@ -983,22 +1193,6 @@ bool procesar_jugada(Estado& estado, NodoLista*& mazo, NodoLista*& mano,
     
     return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*****
 * bool verificar_victoria
